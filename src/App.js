@@ -1,11 +1,10 @@
-// App.js
-
 import { useEffect, useState } from 'react';
 import io from 'socket.io-client';
 import { v4 as uuidv4 } from 'uuid';
 
-const PORT = 3001;
-const socket = io(`https://chat-ae-server.vercel.app/`);
+const socket = io("https://chat-ae-server.vercel.app", {
+  transports: ['websocket', 'polling'], // Use WebSocket with fallback to polling
+});
 
 function App() {
   const [isConnected, setIsConnected] = useState(socket.connected);
@@ -18,47 +17,47 @@ function App() {
   useEffect(() => {
     const handleConnect = () => setIsConnected(true);
     const handleDisconnect = () => setIsConnected(false);
-
-    socket.on('connect', handleConnect);
-    socket.on('disconnect', handleDisconnect);
-
-    return () => {
-      socket.off('connect', handleConnect);
-      socket.off('disconnect', handleDisconnect);
-    };
-  }, []);
-
-  useEffect(() => {
     const handleReceiveMessage = (data) => {
       const { user, message } = data;
       const msg = `${user} sent: ${message}`;
       setMessages(prevState => [msg, ...prevState]);
     };
 
+    socket.on('connect', handleConnect);
+    socket.on('disconnect', handleDisconnect);
     socket.on('receive_msg', handleReceiveMessage);
 
     return () => {
+      socket.off('connect', handleConnect);
+      socket.off('disconnect', handleDisconnect);
       socket.off('receive_msg', handleReceiveMessage);
     };
   }, []);
 
   const handleEnterChatRoom = () => {
-    if (user !== "" && room !== "") {
+    if (user && room) {
       setChatIsVisible(true);
       socket.emit('join_room', { user, room });
     }
   };
 
   const handleSendMessage = () => {
-    const newMsgData = {
-      room: room,
-      user: user,
-      message: newMessage
-    };
-    socket.emit('send_msg', newMsgData);
-    const msg = `${user} sent: ${newMessage}`;
-    setMessages(prevState => [msg, ...prevState]);
-    setNewMessage("");
+    if (newMessage.trim()) {
+      const newMsgData = {
+        room: room,
+        user: user,
+        message: newMessage
+      };
+      socket.emit('send_msg', newMsgData, (error) => {
+        if (error) {
+          console.error('Error sending message:', error);
+        } else {
+          const msg = `${user} sent: ${newMessage}`;
+          setMessages(prevState => [msg, ...prevState]);
+          setNewMessage(""); // Clear input after successfully sending
+        }
+      });
+    }
   };
 
   return (
@@ -94,8 +93,8 @@ function App() {
               padding: 18
             }}
           >
-            {messages.map(msg => (
-              <div key={uuidv4()}>{msg}</div>
+            {messages.map((msg, index) => (
+              <div key={index}>{msg}</div> // Using index as a key
             ))}
           </div>
           <input
