@@ -5,7 +5,7 @@ import io from 'socket.io-client';
 import { v4 as uuidv4 } from 'uuid';
 
 const PORT = 3001;
-const socket = io(`http://localhost:${PORT}`);
+const socket = io(`https://chat-ae-server.vercel.app/`);
 
 function App() {
   const [isConnected, setIsConnected] = useState(socket.connected);
