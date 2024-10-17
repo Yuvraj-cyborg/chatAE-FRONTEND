@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import io from 'socket.io-client';
-import { v4 as uuidv4 } from 'uuid';
 
 const socket = io("https://chat-ae-server.vercel.app", {
-  transports: ['websocket', 'polling'], // Use WebSocket with fallback to polling
+  transports: ['websocket', 'polling'],
 });
 
 function App() {
@@ -43,68 +42,74 @@ function App() {
 
   const handleSendMessage = () => {
     if (newMessage.trim()) {
-      const newMsgData = {
-        room: room,
-        user: user,
-        message: newMessage
-      };
+      const newMsgData = { room, user, message: newMessage };
       socket.emit('send_msg', newMsgData, (error) => {
         if (error) {
           console.error('Error sending message:', error);
         } else {
           const msg = `${user} sent: ${newMessage}`;
           setMessages(prevState => [msg, ...prevState]);
-          setNewMessage(""); // Clear input after successfully sending
+          setNewMessage(""); // Clear input after sending
         }
       });
     }
   };
 
   return (
-    <div style={{ padding: 20 }}>
+    <div className="flex items-center justify-center h-screen bg-black">
       {!chatIsVisible ? (
-        <>
+        <div className="bg-gray-900 p-8 rounded-lg shadow-lg text-center w-full max-w-sm">
+          <h2 className="text-purple-400 text-2xl mb-6 font-bold">Join a Chat Room</h2>
           <input
             type="text"
-            placeholder="user"
+            placeholder="Enter your name"
+            className="w-full p-2 mb-4 text-white bg-gray-800 rounded-md placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
             value={user}
             onChange={e => setUser(e.target.value)}
           />
-          <br />
           <input
             type="text"
-            placeholder="room"
+            placeholder="Enter room name"
+            className="w-full p-2 mb-6 text-white bg-gray-800 rounded-md placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
             value={room}
             onChange={e => setRoom(e.target.value)}
           />
-          <br />
-          <button onClick={handleEnterChatRoom}>Enter</button>
-        </>
-      ) : (
-        <>
-          <h5>Room: {room} | User: {user}</h5>
-          <div
-            style={{
-              height: 200,
-              width: 250,
-              border: '1px solid #000',
-              overflowY: 'scroll',
-              marginBottom: 10,
-              padding: 18
-            }}
+          <button 
+            className="w-full p-2 text-white bg-purple-600 rounded-md hover:bg-purple-700 transition duration-200"
+            onClick={handleEnterChatRoom}
           >
+            Enter Room
+          </button>
+        </div>
+      ) : (
+        <div className="bg-gray-900 p-6 rounded-lg shadow-lg w-full max-w-md">
+          <div className="flex justify-between items-center mb-4">
+            <h5 className="text-white text-xl font-semibold">Room: {room} | User: {user}</h5>
+            <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+          </div>
+          <div className="bg-gray-800 h-64 mb-4 p-4 overflow-y-scroll rounded-lg shadow-inner text-white">
             {messages.map((msg, index) => (
-              <div key={index}>{msg}</div> // Using index as a key
+              <div key={index} className="mb-2">
+                <span className="text-purple-400 font-semibold">{msg}</span>
+              </div>
             ))}
           </div>
-          <input
-            type="text"
-            placeholder="message"
-            value={newMessage}
-            onChange={e => setNewMessage(e.target.value)}
-          />
-          <button onClick={handleSendMessage}>Send Message</button>
-        </>
+          <div className="flex space-x-2">
+            <input
+              type="text"
+              placeholder="Type a message..."
+              className="w-full p-2 bg-gray-800 text-white rounded-md placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              value={newMessage}
+              onChange={e => setNewMessage(e.target.value)}
+            />
+            <button 
+              className="p-2 text-white bg-purple-600 rounded-md hover:bg-purple-700 transition duration-200"
+              onClick={handleSendMessage}
+            >
+              Send
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
